@@ -60,6 +60,11 @@ def pipeline(n_df):
 
     # se cambia por el ciclo más repetido para un cultivo
 
+    n_df["version_biotecnologica"] = np.where(
+        (n_df["version_biotecnologica"].isnull()) & (n_df["cultivo"] != "maiz") & (n_df["cultivo"] != "girasol"),
+        "No aplica", "no bt")
+
+
     ciclo_mas_repetido = {
         "trigo": "intermedio",
         "soja": "iv largo",
@@ -72,8 +77,18 @@ def pipeline(n_df):
 
     # temprano tardio solo aplica para maiz, si el cultivo no es maiz se pone no aplica, sino se pone moda
 
-    n_df["temprano_tardio"] = np.where((n_df["temprano_tardio"].isnull()) & (n_df["cultivo"] != "maiz"), "No aplica",
-                                       "temprano")
+    n_df["mes_fecha_cosecha"] = pd.to_datetime(n_df["fecha_cosecha"], format="%m")
+
+    n_df["temprano_tardio"] = np.where(
+        (n_df["temprano_tardio"].isnull()) & (n_df["cultivo"] != "maiz"),
+        "No aplica",
+        np.where(
+            (n_df["mes_fecha_cosecha"].notnull()) &
+            (n_df["mes_fecha_cosecha"].dt.month > 11),
+            "tardio",
+            "temprano"
+        )
+    )
 
     promedio_localidad = n_df.groupby('localidad')['poblacion_pl_ha'].mean()
     promedio_lote = n_df.groupby('lote')['poblacion_pl_ha'].mean()
